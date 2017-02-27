@@ -115,29 +115,7 @@ public class ChannelListByRegion {
             	System.out.println("Vertical move - coordinates (" + latitude + "," + longitude + ")");
             	System.out.println("================================================");
             }	
-            	
-                
 
-            
-        	//Parameters    
-            /*search.setKey(apiKey);
-            search.setLocation("39.1550234,-8.2751083");
-            search.setLocationRadius("" + radius + "km");
-            search.setType("video");
-            search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
-            search.setFields("items(snippet/channelId)");
-            
-            do{
-            
-	            search.setPageToken(nextToken);
-	            SearchListResponse searchResponse = search.execute();
-	            searchResults.removeAll(searchResponse.getItems());
-	            searchResults.addAll(searchResponse.getItems());
-
-	            nextToken = searchResponse.getNextPageToken();
-	            
-            } while(nextToken != null);*/
-            
             if (searchResults != null) {
 
             	for (SearchResult searchResult : searchResults) {
@@ -145,52 +123,13 @@ public class ChannelListByRegion {
             		if(verifyIfExists(searchResult.getSnippet().getChannelId()) && getChannelCountry(searchResult.getSnippet().getChannelId())){
             			insertIntoDB(searchResult.getSnippet().getChannelId());
             		}
-            		/*if(!channelsIds.contains(searchResult.getSnippet().getChannelId())){
-            			if(getChannelCountry(searchResult.getSnippet().getChannelId())){
-            				channelsIds.add(searchResult.getSnippet().getChannelId());
-                			//insertIntoDB(searchResult.getSnippet().getChannelId());
-                			System.out.println(searchResult.getSnippet().getChannelTitle());
-            			}
-            		}*/
-                }
+            	}
             }
-                
-                
-            
-            
-            
-            /*while(nextToken != null){
-            	search.setKey(apiKey);
-                search.setLocation("39.1550234,-8.2751083");
-                search.setLocationRadius("340km");
-                //search.setRegionCode("PT");
-                search.setType("video");
-                search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
-                search.setPageToken(nextToken);
-                
-                searchResponse = search.execute();
-                searchResultList = searchResponse.getItems();
-                
-                if (searchResultList != null) {
-
-                	for (SearchResult searchResult : searchResultList) {
-                		if(!channelsIds.contains(searchResult.getSnippet().getChannelId())){
-                			if(getChannelCountry(searchResult.getSnippet().getChannelId())  || getVideoCountry(searchResult.getId().getVideoId())){
-                				channelsIds.add(searchResult.getSnippet().getChannelId());
-                    			insertIntoDB(searchResult.getSnippet().getChannelId());
-                    			System.out.println(searchResult.getSnippet().getChannelTitle());
-                			}
-                		}
-                    }
-                }
-                
-                nextToken = searchResponse.getNextPageToken();
-                System.out.println("Proxima pagina com token: " + nextToken);
-                Thread.sleep(10000);
-            }*/
+        }
+            		
         
             
-        } catch (GoogleJsonResponseException e) {
+		catch (GoogleJsonResponseException e) {
             System.err.println("There was a service error: " + e.getDetails().getCode() + " : "
                     + e.getDetails().getMessage());
         } catch (IOException e) {
