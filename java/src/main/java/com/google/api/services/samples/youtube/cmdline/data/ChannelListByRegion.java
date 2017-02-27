@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ public class ChannelListByRegion {
     static final String PASS = "pass123";
     
 	static PreparedStatement stmt = null;
+	static PreparedStatement stmtverify = null;
 	static Connection conn = null;
 
 
@@ -69,36 +71,87 @@ public class ChannelListByRegion {
             
             String nextToken = "";
             List<SearchResult> searchResults = new ArrayList<SearchResult>();
+            
+            //double increment = 0.4499640028797696; -- 50km
+            double increment = 0.0899928005759539; //10km
+            
+            double limitW = -9.5020795;
+            double limitE = -6.1928558;
+            double limitN = 42.1438053;
+            double limitS = 36.9655293;
+            
+            double latitude = limitN;
+            double longitude = limitW;
+            
+            while(latitude >= limitS){
+            	while(longitude <= limitE){
+            		//Parameters    
+                    search.setKey(apiKey);
+                    search.setLocation("" + latitude +"," + longitude);
+                    search.setLocationRadius("10km");
+                    search.setType("video");
+                    search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
+                    search.setFields("items(snippet/channelId)");
+                    
+                    do{
+                    
+        	            search.setPageToken(nextToken);
+        	            SearchListResponse searchResponse = search.execute();
+        	            searchResults.removeAll(searchResponse.getItems());
+        	            searchResults.addAll(searchResponse.getItems());
 
+        	            nextToken = searchResponse.getNextPageToken();
+        	            
+                    } while(nextToken != null);
+                    
+                    longitude += increment;
+                    
+                    System.out.println("Horizontal move - coordinates (" + latitude + "," + longitude + ")");
+            	}
+            	
+            	longitude = limitW;
+            	latitude -= increment;
+            	System.out.println("================================================");
+            	System.out.println("Vertical move - coordinates (" + latitude + "," + longitude + ")");
+            	System.out.println("================================================");
+            }	
+            	
+                
+
+            
         	//Parameters    
-            search.setKey(apiKey);
+            /*search.setKey(apiKey);
             search.setLocation("39.1550234,-8.2751083");
-            search.setLocationRadius("340km");
+            search.setLocationRadius("" + radius + "km");
             search.setType("video");
             search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
+            search.setFields("items(snippet/channelId)");
             
             do{
             
 	            search.setPageToken(nextToken);
-	            SearchListResponse searchResponse = search.execute();            
+	            SearchListResponse searchResponse = search.execute();
+	            searchResults.removeAll(searchResponse.getItems());
 	            searchResults.addAll(searchResponse.getItems());
-	            
+
 	            nextToken = searchResponse.getNextPageToken();
 	            
-            } while(nextToken != null);
+            } while(nextToken != null);*/
             
-            
-
             if (searchResults != null) {
 
             	for (SearchResult searchResult : searchResults) {
-            		if(!channelsIds.contains(searchResult.getSnippet().getChannelId())){
+            		
+            		if(verifyIfExists(searchResult.getSnippet().getChannelId()) && getChannelCountry(searchResult.getSnippet().getChannelId())){
+            			insertIntoDB(searchResult.getSnippet().getChannelId());
+            		}
+            		/*if(!channelsIds.contains(searchResult.getSnippet().getChannelId())){
             			if(getChannelCountry(searchResult.getSnippet().getChannelId())){
             				channelsIds.add(searchResult.getSnippet().getChannelId());
-                			insertIntoDB(searchResult.getSnippet().getChannelId());
+                			//insertIntoDB(searchResult.getSnippet().getChannelId());
                 			System.out.println(searchResult.getSnippet().getChannelTitle());
             			}
-            		}
+            		}*/
                 }
             }
                 
@@ -106,7 +159,7 @@ public class ChannelListByRegion {
             
             
             
-            while(nextToken != null){
+            /*while(nextToken != null){
             	search.setKey(apiKey);
                 search.setLocation("39.1550234,-8.2751083");
                 search.setLocationRadius("340km");
@@ -168,6 +221,26 @@ public class ChannelListByRegion {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}    
+    }
+    
+    public static boolean verifyIfExists(String channelID){
+    	try{
+    		stmtverify = conn.prepareStatement("SELECT count(*) FROM channelid WHERE channelid = ?");
+    		stmtverify.setString(1, channelID);
+    		ResultSet resultSet = stmtverify.executeQuery();
+    		if(resultSet.next()) {
+    		    if(resultSet.getInt(1) > 0){
+    		    	return false; //Existe
+    		    }
+    		    else{
+    		    	return true; //Nao existe
+    		    }
+    		}
+    	} catch (SQLException e) {
+			e.printStackTrace();
+		}  
+    	
+    	return false;
     }
     
     public static boolean getChannelCountry(String channelID){
