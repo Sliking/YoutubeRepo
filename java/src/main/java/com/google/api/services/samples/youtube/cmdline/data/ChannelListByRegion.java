@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 
@@ -117,18 +118,28 @@ public class ChannelListByRegion {
             }	
 
             if (searchResults != null) {
-
-            	for (SearchResult searchResult : searchResults) {
-            		
-            		if(verifyIfExists(searchResult.getSnippet().getChannelId()) && getChannelCountry(searchResult.getSnippet().getChannelId())){
-            			insertIntoDB(searchResult.getSnippet().getChannelId());
+            	
+            	System.out.println("================================================");
+            	System.out.println("Inserting in local database");
+            	System.out.println("================================================");
+            	
+            	HashSet<String> hs = new HashSet<String>();
+            	
+            	for (SearchResult searchResult : searchResults) {   		
+            		if(getChannelCountry(searchResult.getSnippet().getChannelId())){
+            			hs.add(searchResult.getSnippet().getChannelId());
             		}
+            	}
+            	
+            	int counter = 0;
+            	for(String channelid : hs){
+            		insertIntoDB(channelid);
+            		counter++;
+            		System.out.println("Added! Total channelid: " + counter);
             	}
             }
         }
-            		
-        
-            
+            		      
 		catch (GoogleJsonResponseException e) {
             System.err.println("There was a service error: " + e.getDetails().getCode() + " : "
                     + e.getDetails().getMessage());
