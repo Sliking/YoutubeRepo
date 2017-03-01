@@ -79,6 +79,13 @@
 		    <artifactId>mysql-connector-java</artifactId>
 		    <version>6.0.5</version>
 		</dependency>
+		
+		<!-- Langue detection -->
+		<dependency>
+		    <groupId>com.optimaize.languagedetector</groupId>
+		    <artifactId>language-detector</artifactId>
+		    <version>0.6</version>
+		</dependency>
     </dependencies>
 
     <build>
