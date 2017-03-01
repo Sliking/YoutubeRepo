@@ -48,6 +48,103 @@ public class ChannelListByRegion {
     	
     	connectToDB();
     	
+    	//locationCircles();
+    	
+    	lisbonArea();
+    	
+    }
+    
+    public static void lisbonArea(){
+    	Properties properties = new Properties();
+        try {
+            InputStream in = ChannelListByRegion.class.getResourceAsStream("/" + PROPERTIES_FILENAME);
+            properties.load(in);
+
+        } catch (IOException e) {
+            System.err.println("There was an error reading " + PROPERTIES_FILENAME + ": " + e.getCause()
+                    + " : " + e.getMessage());
+            System.exit(1);
+        }
+        
+        try {
+            youtube = new YouTube.Builder(Auth.HTTP_TRANSPORT, Auth.JSON_FACTORY, new HttpRequestInitializer() {
+                @Override
+                public void initialize(HttpRequest request) throws IOException {
+                }
+            }).setApplicationName("youtube-cmdline-channellistbyregion").build();
+            
+            YouTube.Search.List search = youtube.search().list("snippet");
+            
+            apiKey = properties.getProperty("youtube.apikey");
+            
+            String nextToken = "";
+            List<SearchResult> searchResults = new ArrayList<SearchResult>();
+            
+            double radius = 0.1;
+            double increment = 0.1;
+            
+            while(radius < 100){
+        		//Parameters    
+                search.setKey(apiKey);
+                search.setLocation("38.722264,-9.139194");
+                search.setLocationRadius(radius + "km");
+                search.setType("video");
+                search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
+                search.setFields("items(snippet/channelId)");
+                
+                do{
+                
+    	            search.setPageToken(nextToken);
+    	            SearchListResponse searchResponse = search.execute();
+    	            searchResults.removeAll(searchResponse.getItems());
+    	            searchResults.addAll(searchResponse.getItems());
+
+    	            nextToken = searchResponse.getNextPageToken();
+    	            
+                } while(nextToken != null);
+                
+                radius += increment;
+                
+                System.out.println("================================================");
+            	System.out.println("Radius: " + radius);
+            	System.out.println("================================================");
+        	}
+
+            if (searchResults != null) {
+            	
+            	System.out.println("================================================");
+            	System.out.println("Inserting in local database");
+            	System.out.println("================================================");
+            	
+            	HashSet<String> hs = new HashSet<String>();
+            	
+            	for (SearchResult searchResult : searchResults) { 
+                	String channelID = searchResult.getSnippet().getChannelId();
+            		if(getChannelCountry(channelID) && verifyIfExists(channelID)){
+            			hs.add(channelID);
+            		}
+            	}
+            	
+            	int counter = 0;
+            	for(String channelid : hs){
+            		insertIntoDB(channelid);
+            		counter++;
+            		System.out.println("Added! Total channelid: " + counter);
+            	}
+            }
+        }
+            		      
+		catch (GoogleJsonResponseException e) {
+            System.err.println("There was a service error: " + e.getDetails().getCode() + " : "
+                    + e.getDetails().getMessage());
+        } catch (IOException e) {
+            System.err.println("There was an IO error: " + e.getCause() + " : " + e.getMessage());
+        } catch (Throwable t) {
+            t.printStackTrace();
+        } 
+    }
+    
+    public static void locationCircles(){
     	Properties properties = new Properties();
         try {
             InputStream in = ChannelListByRegion.class.getResourceAsStream("/" + PROPERTIES_FILENAME);
@@ -171,6 +268,17 @@ public class ChannelListByRegion {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}    
+    }
+    
+    public static ResultSet getAllFromDB(){
+    	try{
+	    	PreparedStatement ps = conn.prepareStatement("SELECT * FROM channelid");
+	    	ResultSet rs = ps.executeQuery();
+	    	return rs;
+    	} catch(SQLException e){
+    		e.printStackTrace();
+    		return null;
+    	}
     }
     
     public static boolean verifyIfExists(String channelID){
