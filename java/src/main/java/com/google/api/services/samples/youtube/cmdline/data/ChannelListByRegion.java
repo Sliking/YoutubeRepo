@@ -60,9 +60,9 @@ public class ChannelListByRegion {
     	
     	loadKey();
     	
-    	//locationCircles();
+    	locationCircles();
     	
-    	lisbonArea();
+    	//lisbonArea();
     	
     	//perCountryAndDescription();
     }
@@ -197,7 +197,7 @@ public class ChannelListByRegion {
             while(radius < 100){
         		//Parameters    
                 search.setKey(apiKey);
-                search.setLocation("38.722264,-9.139194");
+                search.setLocation("38.722505,-9.139378");
                 search.setLocationRadius(radius + "km");
                 search.setType("video");
                 search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
@@ -231,7 +231,7 @@ public class ChannelListByRegion {
             	
             	for (SearchResult searchResult : searchResults) { 
                 	String channelID = searchResult.getSnippet().getChannelId();
-            		if(getChannelCountry(channelID) && verifyIfExists(channelID) && getChannelDescriptionLanguage(channelID)){
+            		if(getChannelCountry(channelID) && verifyIfExists(channelID)){
             			hs.add(channelID);
             		}
             	}
@@ -268,8 +268,8 @@ public class ChannelListByRegion {
             String nextToken = "";
             List<SearchResult> searchResults = new ArrayList<SearchResult>();
             
-            //double increment = 0.4499640028797696; -- 50km
-            double increment = 0.0899928005759539; //10km
+            double increment = 0.4499640028797696; //-- 50km
+            //double increment = 0.0899928005759539; //10km
             
             double limitW = -9.5020795;
             double limitE = -6.1928558;
@@ -284,7 +284,7 @@ public class ChannelListByRegion {
             		//Parameters    
                     search.setKey(apiKey);
                     search.setLocation("" + latitude +"," + longitude);
-                    search.setLocationRadius("10km");
+                    search.setLocationRadius("50km");
                     search.setType("video");
                     search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
                     search.setFields("items(snippet/channelId)");
@@ -320,9 +320,10 @@ public class ChannelListByRegion {
             	
             	HashSet<String> hs = new HashSet<String>();
             	
-            	for (SearchResult searchResult : searchResults) {   		
-            		if(getChannelCountry(searchResult.getSnippet().getChannelId())){
-            			hs.add(searchResult.getSnippet().getChannelId());
+            	for (SearchResult searchResult : searchResults) {
+            		String channelID = searchResult.getSnippet().getChannelId();
+            		if(getChannelCountry(channelID) && verifyIfExists(channelID)){
+            			hs.add(channelID);
             		}
             	}
             	
@@ -412,7 +413,12 @@ public class ChannelListByRegion {
                 return false;
             }        	
     		if(channelList.get(0).getSnippet().getCountry() == null){
-    			return false;
+    			if(getChannelDescriptionLanguage(channelList.get(0).getSnippet().getDescription())){
+    				return true;
+    			}
+    			else{
+    				return false;
+    			}
     		}
     		if(channelList.get(0).getSnippet().getCountry().equals("PT")){
     			return true;
@@ -426,18 +432,8 @@ public class ChannelListByRegion {
         return false;
     }
     
-    public static boolean getChannelDescriptionLanguage(String channelID){
-    	try {
-        	
-        	ChannelListResponse channelListResponse = youtube.channels().
-                    list("snippet").setKey(apiKey).setId(channelID).execute();
-        	
-        	List<Channel> channelList = channelListResponse.getItems();
-        	        	
-        	if (channelList.isEmpty()) {
-                System.out.println("Can't find a channel with ID: " + channelID);
-                return false;
-            }        	
+    public static boolean getChannelDescriptionLanguage(String description){
+    	try {       	      	
         	//load all languages:
     		List<LanguageProfile> languageProfiles;
 			languageProfiles = new LanguageProfileReader().readAllBuiltIn();
@@ -450,13 +446,15 @@ public class ChannelListByRegion {
     		TextObjectFactory textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
 
     		//query:
-    		TextObject textObject = textObjectFactory.forText(channelList.get(0).getSnippet().getDescription());
+    		TextObject textObject = textObjectFactory.forText(description);
     		Optional<LdLocale> lang = languageDetector.detect(textObject);
     		
-    		if(lang.get().getLanguage().equals("pt")){
-    			return true;
+    		if(lang.isPresent()){
+    			if(lang.get().getLanguage().equals("pt")){
+        			return true;
+        		}
     		}
-        	
+    		       	
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
