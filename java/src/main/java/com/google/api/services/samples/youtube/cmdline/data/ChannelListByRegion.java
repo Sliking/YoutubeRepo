@@ -268,8 +268,8 @@ public class ChannelListByRegion {
             String nextToken = "";
             List<SearchResult> searchResults = new ArrayList<SearchResult>();
             
-            double increment = 0.4499640028797696; //-- 50km
-            //double increment = 0.0899928005759539; //10km
+            //double increment = 0.4499640028797696; //-- 50km
+            double increment = 0.0899928005759539; //10km
             
             double limitW = -9.5020795;
             double limitE = -6.1928558;
@@ -284,7 +284,7 @@ public class ChannelListByRegion {
             		//Parameters    
                     search.setKey(apiKey);
                     search.setLocation("" + latitude +"," + longitude);
-                    search.setLocationRadius("50km");
+                    search.setLocationRadius("10km");
                     search.setType("video");
                     search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
                     search.setFields("items(snippet/channelId)");
